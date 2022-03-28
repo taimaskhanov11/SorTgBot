@@ -1,0 +1,11 @@
+bot:
+  token: tg_bot_token
+  admins:
+    - your_tg_id
+    - your_tg_id
+db:
+  username: postgres
+  password: postgres
+  host: localhost
+  port: 5432
+  db_name: SorTgBot
