@@ -25,7 +25,7 @@ async def set_commands(bot: Bot):
 
 async def main():
     # Настройка логирования
-    init_logging(old_logger=True, level=logging.DEBUG, steaming=True)
+    init_logging(old_logger=True, level=logging.DEBUG, steaming=False)
     logger.info(f"Starting bot {(await bot.get_me()).username}")
 
     # Установка команд бота
