@@ -42,18 +42,6 @@ async def add_summation(call: types.CallbackQuery, state: FSMContext):
     await CreateSummation.first()
 
 
-PRE: Optional[types.Message] = None
-
-
-async def pre_delete(message):
-    global PRE
-    if PRE:
-        await bot.delete_message(PRE.chat.id, PRE.message_id)
-        PRE = message
-    else:
-        PRE = message
-
-
 @logger.catch
 async def upload_summation_data(message: types.Message, state: FSMContext):
     # todo 28.03.2022 21:38 taima: text or photo
@@ -68,7 +56,7 @@ async def upload_summation_data(message: types.Message, state: FSMContext):
 
         else:
             if message.content_type in ["photo", "document"]:
-                type = "photo"
+                type = "photo" if message.photo else "document"
                 # pprint(message.photo)
                 text = message.caption
                 # logger.info(message.document)
@@ -81,7 +69,6 @@ async def upload_summation_data(message: types.Message, state: FSMContext):
                     pass
                     # file_paths = data["file_path"] + f"\n{file_path}"
                     # await state.update_data(file_path=file_paths)
-
                 else:
                     await state.update_data(type=type, text=text, file_path=str(file_path))
                 await message.answer("Фото загружено", reply_markup=markups.summation_done_kbr)
@@ -119,6 +106,7 @@ async def delete_summation(call: types.CallbackQuery):
     for summation in summations:
         answer += f"{summation}\n{'_' * 15}\n"
     answer += "\n\nВведите ID для удаления чтобы отменить введите /admin"
+    await DeleteSummation.delete.set()
     await call.message.answer(answer)
 
 
@@ -147,10 +135,52 @@ async def create_mailing(call: types.CallbackQuery):
 
 
 async def create_mailing_done(message: types.Message, state: FSMContext):
-    await state.finish()
-    for user in await User.all():
-        await bot.send_message(user.user_id, message.text)
-    await message.answer("Рассылка успешно отправлена")
+    logger.trace(message)
+    logger.trace(temp.send_data)
+    if message.text == "Завершить":
+        data = await state.get_data()
+        _type = data.get("type")
+        for file in temp.send_data:
+            if _type == "photo":
+                for user in await User.all():
+                    with open(file, "rb") as f:
+                        await message.bot.send_photo(user.user_id, f)
+
+            else:
+                for user in await User.all():
+                    with open(file, "rb") as f:
+                        await message.bot.send_document(user.user_id, f)
+
+        temp.send_data = []
+        await message.answer("Рассылка успешно отправлена", reply_markup=ReplyKeyboardRemove())
+        await state.finish()
+
+    else:
+        if message.content_type in ["photo", "document"]:
+            type = "photo" if message.photo else "document"
+            # pprint(message.photo)
+            text = message.caption
+            # logger.info(message.document)
+            file = message.photo[-1] if message.photo else message.document
+            logger.info(file.as_json())
+            file_path = TEMP_DIR / file.file_id
+            await file.download(destination_file=file_path)
+            temp.send_data.append(file_path)
+            await state.update_data(type=type, text=text)
+            await message.answer("Фото для отправки загружено", reply_markup=markups.summation_done_kbr)
+
+        else:
+            type = "text"
+            text = message.text
+            if temp.send_data:
+                await state.update_data(file_path="\n".join(map(str, temp.send_data)))
+                temp.send_data = []
+            await state.update_data(type=type, text=text)
+            for user in await User.all():
+                await bot.send_message(user.user_id, message.text)
+
+            await message.answer("Рассылка успешно отправлена.", reply_markup=ReplyKeyboardRemove())
+            await state.finish()
 
 
 def register_admin_menu_handlers(dp: Dispatcher):
@@ -175,4 +205,4 @@ def register_admin_menu_handlers(dp: Dispatcher):
     dp.register_callback_query_handler(users_list, MainFilter(), text="users_list")
 
     dp.register_callback_query_handler(create_mailing, MainFilter(), text="create_mailing")
-    dp.register_message_handler(create_mailing_done, MainFilter(), state=CreateMailing)
+    dp.register_message_handler(create_mailing_done, MainFilter(), content_types=ContentTypes.ANY, state=CreateMailing)

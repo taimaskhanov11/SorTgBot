@@ -22,12 +22,13 @@ async def main_start(message: types.Message, state: FSMContext, user: User):
     await state.finish()
 
     if not await channel_status_check(message.from_user.id):
-        await message.answer(
-            "🇷🇺Для того, чтобы пользоваться ботом, нужно подписаться на каналы\n"
-            "🇰🇿Ботты пайдалану үшін арналарға жазылу керек\n"
-            "Каналы: https://t.me/schoolhack1 https://t.me/schoolprokz",
-            reply_markup=markups.i_subscribe_kbr,
-        )
+        await message.answer("🇷🇺Для того, чтобы пользоваться ботом, нужно подписаться на каналы\n"
+                             "🇰🇿Ботты пайдалану үшін арналарға жазылу керек\n")
+        for channel_url in ["https://t.me/schoolhack1", "https://t.me/schoolprokz"]:
+            await message.answer(
+                channel_url,
+                reply_markup=markups.i_subscribe_kbr,
+            )
         return
 
     await message.answer(
@@ -97,10 +98,15 @@ async def show_summation(call: types.CallbackQuery):
     # await call.message.delete()
     if summation.type == "text":
         await call.message.answer(f"[{summation.title}]\n{summation.text}")
-    else:
+
+    elif summation.type == "photo":
         for path in summation.file_path.split("\n"):
             with open(path, "rb") as f:
                 await call.bot.send_photo(call.from_user.id, f, caption=summation.text)
+    else:
+        for path in summation.file_path.split("\n"):
+            with open(path, "rb") as f:
+                await call.bot.send_document(call.from_user.id, f, caption=summation.text)
 
 
 def register_common_handlers(dp: Dispatcher):

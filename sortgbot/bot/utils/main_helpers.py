@@ -5,6 +5,7 @@ from sortgbot.loader import bot
 
 class temp:
     files_paths = []
+    send_data = []
 
 
 async def channel_status_check(user_id):
