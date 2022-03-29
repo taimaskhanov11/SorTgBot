@@ -6,7 +6,7 @@ import yaml
 from pydantic import BaseModel
 
 BASE_DIR = Path(__file__).parent.parent.parent
-
+TEMP_DIR = BASE_DIR / f"sortgbot/bot/temp"
 
 def load_yaml(file) -> dict:
     with open(Path(BASE_DIR, file), "r", encoding="utf-8") as f:
@@ -31,4 +31,4 @@ class Config(BaseModel):
     db: Database
 
 
-config = Config(**load_yaml("config.yml"))
+config = Config(**load_yaml("config_dev.yml"))

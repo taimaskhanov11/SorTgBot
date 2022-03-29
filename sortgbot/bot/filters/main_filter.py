@@ -9,6 +9,7 @@ from sortgbot.db.models import User
 
 
 class MainFilter(BoundFilter):
+    @logger.catch
     async def check(self, message: types.Message):
         logger.trace(message)
         ui = message.from_user.id

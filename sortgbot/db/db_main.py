@@ -1,7 +1,10 @@
+import asyncio
+
 from loguru import logger
 from tortoise import Tortoise
 
 from sortgbot.config.config import config
+from sortgbot.db.models import User
 
 
 async def init_tortoise():
@@ -17,3 +20,10 @@ async def init_tortoise():
         logger.critical(e)
         await Tortoise.init(_create_db=True, **data, )
     await Tortoise.generate_schemas()
+
+async def get_data():
+    await init_tortoise()
+    print((await User.first()))
+
+if __name__ == '__main__':
+    asyncio.run(get_data())

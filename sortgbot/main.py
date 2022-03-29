@@ -36,8 +36,8 @@ async def main():
     # register_admin_commands_handlers(dp)
 
     # Регистрация хэндлеров
-    register_common_handlers(dp)
     register_admin_menu_handlers(dp)
+    register_common_handlers(dp)
     # Регистрация middleware
     # dp.middleware.setup(FatherMiddleware())
     # dp.middleware.setup(AuthMiddleware())

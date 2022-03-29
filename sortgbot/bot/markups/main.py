@@ -1,6 +1,7 @@
 from itertools import chain
 
-from aiogram.types import ReplyKeyboardMarkup
+from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
+from loguru import logger
 
 lang_choice = ReplyKeyboardMarkup(
     [
@@ -50,7 +51,7 @@ ru_quarter_kbr = ReplyKeyboardMarkup(
 )
 kz_quarter_kbr = ReplyKeyboardMarkup(
     [
-        ["1 тоқсан", "2 тоқсан", "3 тоқсан" "4 тоқсан"],
+        ["1 тоқсан", "2 тоқсан", "3 тоқсан", "4 тоқсан"],
         [],
     ],
     resize_keyboard=True,
@@ -58,13 +59,34 @@ kz_quarter_kbr = ReplyKeyboardMarkup(
 
 
 def get_subject_keyboard(subjects: list[list]) -> ReplyKeyboardMarkup:
+    logger.info(subjects)
+    print(subjects)
     subjects_zip: list[tuple] = list(zip(*[iter(subjects)] * 4))
+    logger.info(subjects_zip)
 
     remaining_subject = []
+    k = 0
     for count in range(len(subjects) - len(list(chain.from_iterable(subjects_zip)))):
-        remaining_subject.append(subjects.pop())
+        k -= 1
+        remaining_subject.append(subjects[k])
+
+    logger.info(remaining_subject)
     subjects_zip.append(remaining_subject)
+    logger.info(subjects_zip)
     return ReplyKeyboardMarkup(
         subjects_zip,
         resize_keyboard=True,
+    )
+
+
+def ibtn(text, data):
+    return InlineKeyboardButton(text=text, callback_data=data)
+
+
+def show_summation_keyboard(summations):
+    summation_admin_menu_buttons = [
+        [ibtn(summation.title, f"show_summation_{summation.pk}") for summation in summations]
+    ]
+    return InlineKeyboardMarkup(
+        inline_keyboard=summation_admin_menu_buttons,
     )

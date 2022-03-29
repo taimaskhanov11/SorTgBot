@@ -1,13 +1,14 @@
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
+from loguru import logger
 
 from sortgbot.bot import markups
 from sortgbot.bot.filters.main_filter import MainFilter
 from sortgbot.bot.scenario.scenario import scenarios, Scenario
 from sortgbot.bot.states.create_summation import CreateSummation, UploadSummation
 from sortgbot.bot.utils.main_helpers import channel_status_check
-from sortgbot.db.models import User
+from sortgbot.db.models import User, SummationStorage
 
 
 class ChoiceLang(StatesGroup):
@@ -50,8 +51,9 @@ async def grade(message: types.Message, state: FSMContext, scenario: Scenario):
 
 
 async def quarter(message: types.Message, state: FSMContext, scenario: Scenario):
+    data = await state.get_data()
     await state.update_data(quarter=message.text)
-    await message.answer(scenario.subject.title, reply_markup=scenario.subject.keyboard)
+    await message.answer(scenario.subject.title, reply_markup=scenario.get_subject_keyboard(int(data["grade"])))
     await CreateSummation.next()
 
 
@@ -66,11 +68,30 @@ async def sorsoch(message: types.Message, state: FSMContext, scenario: Scenario)
     data = await state.get_data()
     if data.get("is_admin"):
         await message.answer("Загрузка суммативки\n"
-                             "Ведите текст или отправьте сообщение")
+                             "Ведите текст или отправьте изображение")
         await UploadSummation.first()
     else:
-        await message.answer(str(data))
+        summations = await SummationStorage.filter(
+            **data
+        )
+        logger.trace(data)
+        logger.trace(summations)
+        if summations:
+            await message.answer("Выберите кнопку", reply_markup=markups.show_summation_keyboard(summations))
+        else:
+            await message.answer("Пусто")
         await state.finish()
+
+
+async def show_summation(call: types.CallbackQuery):
+    summation_pk = call.data[15:]
+    summation = await SummationStorage.get(pk=summation_pk)
+    # await call.message.delete()
+    if summation.type == "text":
+        await call.message.answer(f"[{summation.title}]\n{summation.text}")
+    else:
+        with open(summation.file_path, "rb") as f:
+            await call.bot.send_photo(call.from_user.id, f, caption=summation.text)
 
 
 def register_common_handlers(dp: Dispatcher):
@@ -81,3 +102,5 @@ def register_common_handlers(dp: Dispatcher):
     dp.register_message_handler(subject, MainFilter(), state=CreateSummation.subject)
     dp.register_message_handler(quarter, MainFilter(), state=CreateSummation.quarter)
     dp.register_message_handler(sorsoch, MainFilter(), state=CreateSummation.sorsoch)
+
+    dp.register_callback_query_handler(show_summation, text_startswith="show_summation_")
