@@ -15,9 +15,7 @@ class MainFilter(BoundFilter):
         ui = message.from_user.id
         is_admin = ui in config.bot.admins
 
-        user, is_created = await User.get_or_create(user_id=ui,
-                                                    username=message.from_user.username,
-                                                    defaults={"is_admin": True} if is_admin else None)
-        return {"user": user,
-                "scenario": scenarios.get(user.language)
-                }
+        user, is_created = await User.get_or_create(
+            user_id=ui, username=message.from_user.username, defaults={"is_admin": True} if is_admin else None
+        )
+        return {"user": user, "scenario": scenarios.get(user.language)}

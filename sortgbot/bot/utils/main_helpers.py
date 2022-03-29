@@ -3,6 +3,10 @@ from loguru import logger
 from sortgbot.loader import bot
 
 
+class temp:
+    files_paths = []
+
+
 async def channel_status_check(user_id):
     chats = ["@schoolhack1", "@schoolprokz"]
     results = []
@@ -15,7 +19,8 @@ async def channel_status_check(user_id):
             logger.trace(status)
             if status["status"] != "left":
                 results.append(True)
-            results.append(False)
+            else:
+                results.append(False)
         except Exception as e:
             logger.critical(e)
             results.append(True)

@@ -3,6 +3,11 @@ from itertools import chain
 from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 from loguru import logger
 
+
+def ibtn(text, data):
+    return InlineKeyboardButton(text=text, callback_data=data)
+
+
 lang_choice = ReplyKeyboardMarkup(
     [
         ["🇷🇺Русский, орыс", "🇰🇿Казахский, қазақ"],
@@ -57,6 +62,14 @@ kz_quarter_kbr = ReplyKeyboardMarkup(
     resize_keyboard=True,
 )
 
+i_subscribe_kbr = ReplyKeyboardMarkup(
+    [
+        ["Я подписался"],
+        [],
+    ],
+    resize_keyboard=True,
+)
+
 
 def get_subject_keyboard(subjects: list[list]) -> ReplyKeyboardMarkup:
     logger.info(subjects)
@@ -77,10 +90,6 @@ def get_subject_keyboard(subjects: list[list]) -> ReplyKeyboardMarkup:
         subjects_zip,
         resize_keyboard=True,
     )
-
-
-def ibtn(text, data):
-    return InlineKeyboardButton(text=text, callback_data=data)
 
 
 def show_summation_keyboard(summations):

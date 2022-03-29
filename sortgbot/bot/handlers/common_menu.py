@@ -1,13 +1,14 @@
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
+from aiogram.types import ReplyKeyboardRemove
 from loguru import logger
 
 from sortgbot.bot import markups
 from sortgbot.bot.filters.main_filter import MainFilter
 from sortgbot.bot.scenario.scenario import scenarios, Scenario
 from sortgbot.bot.states.create_summation import CreateSummation, UploadSummation
-from sortgbot.bot.utils.main_helpers import channel_status_check
+from sortgbot.bot.utils.main_helpers import channel_status_check, temp
 from sortgbot.db.models import User, SummationStorage
 
 
@@ -21,13 +22,17 @@ async def main_start(message: types.Message, state: FSMContext, user: User):
     await state.finish()
 
     if not await channel_status_check(message.from_user.id):
-        await message.answer("🇷🇺Для того, чтобы пользоваться ботом, нужно подписаться на каналы\n"
-                             "🇰🇿Ботты пайдалану үшін арналарға жазылу керек\n"
-                             "Каналы: https://t.me/schoolhack1 https://t.me/schoolprokz")
+        await message.answer(
+            "🇷🇺Для того, чтобы пользоваться ботом, нужно подписаться на каналы\n"
+            "🇰🇿Ботты пайдалану үшін арналарға жазылу керек\n"
+            "Каналы: https://t.me/schoolhack1 https://t.me/schoolprokz",
+            reply_markup=markups.i_subscribe_kbr,
+        )
         return
 
-    await message.answer("🇷🇺На каком языке продолжить?\n🇰🇿Қай тілде жалғастыру керек?",
-                         reply_markup=markups.lang_choice)
+    await message.answer(
+        "🇷🇺На каком языке продолжить?\n🇰🇿Қай тілде жалғастыру керек?", reply_markup=markups.lang_choice
+    )
     await CreateSummation.first()
 
 
@@ -67,13 +72,16 @@ async def sorsoch(message: types.Message, state: FSMContext, scenario: Scenario)
     await state.update_data(sorsoch=message.text)
     data = await state.get_data()
     if data.get("is_admin"):
-        await message.answer("Загрузка суммативки\n"
-                             "Ведите текст или отправьте изображение")
+        temp.files_path = []
+        await message.answer(
+            "Загрузка суммативки\n"
+            "Ведите текст или отправьте изображение.\n"
+            " Как только закончите нажмите кнопку Завершить",
+            reply_markup=ReplyKeyboardRemove(),
+        )
         await UploadSummation.first()
     else:
-        summations = await SummationStorage.filter(
-            **data
-        )
+        summations = await SummationStorage.filter(**data)
         logger.trace(data)
         logger.trace(summations)
         if summations:
@@ -90,8 +98,9 @@ async def show_summation(call: types.CallbackQuery):
     if summation.type == "text":
         await call.message.answer(f"[{summation.title}]\n{summation.text}")
     else:
-        with open(summation.file_path, "rb") as f:
-            await call.bot.send_photo(call.from_user.id, f, caption=summation.text)
+        for path in summation.file_path.split("\n"):
+            with open(path, "rb") as f:
+                await call.bot.send_photo(call.from_user.id, f, caption=summation.text)
 
 
 def register_common_handlers(dp: Dispatcher):

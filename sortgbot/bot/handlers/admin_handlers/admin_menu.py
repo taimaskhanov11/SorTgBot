@@ -1,14 +1,17 @@
 from pathlib import Path
+from pprint import pprint
+from typing import Optional
 
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import ContentTypes
+from aiogram.types import ContentTypes, ReplyKeyboardRemove
 from loguru import logger
 
 from sortgbot.bot import markups
 from sortgbot.bot.filters.main_filter import MainFilter
 from sortgbot.bot.states.create_summation import CreateSummation, UploadSummation
+from sortgbot.bot.utils.main_helpers import temp
 from sortgbot.config.config import config, BASE_DIR, TEMP_DIR
 from sortgbot.db.models import User, SummationStorage
 from sortgbot.loader import bot
@@ -26,6 +29,7 @@ async def admin_menu(message: types.Message, state: FSMContext):
     await state.finish()
     await message.answer("Выберите функцию", reply_markup=markups.admin_menu)
 
+
 async def no_admin_menu(message: types.Message, state: FSMContext):
     await state.finish()
     await message.answer("Вы не администратор")
@@ -38,25 +42,61 @@ async def add_summation(call: types.CallbackQuery, state: FSMContext):
     await CreateSummation.first()
 
 
+PRE: Optional[types.Message] = None
+
+
+async def pre_delete(message):
+    global PRE
+    if PRE:
+        await bot.delete_message(PRE.chat.id, PRE.message_id)
+        PRE = message
+    else:
+        PRE = message
+
+
 @logger.catch
 async def upload_summation_data(message: types.Message, state: FSMContext):
     # todo 28.03.2022 21:38 taima: text or photo
+    data = await state.get_data()
+    logger.trace(data)
     try:
-        file_path = None
-        if message.content_type in ["photo", "document"]:
-            type = "photo"
-            text = message.caption
-            # logger.info(message.document)
-            file = message.photo[-1] if message.photo else message.document
-            logger.info(file.as_json())
-            file_path = TEMP_DIR / file.file_id
-            await file.download(destination_file=file_path)
+        if message.text == "Завершить":
+            await state.update_data(file_path="\n".join(map(str, temp.files_paths)))
+            temp.files_paths = []
+            await message.answer("Введите название кнопки", reply_markup=ReplyKeyboardRemove())
+            await UploadSummation.next()
+
         else:
-            type = "text"
-            text = message.text
-        await state.update_data(type=type, text=text, file_path=file_path)
-        await message.answer("Введите название кнопки")
-        await UploadSummation.next()
+            if message.content_type in ["photo", "document"]:
+                type = "photo"
+                # pprint(message.photo)
+                text = message.caption
+                # logger.info(message.document)
+                file = message.photo[-1] if message.photo else message.document
+                logger.info(file.as_json())
+                file_path = TEMP_DIR / file.file_id
+                await file.download(destination_file=file_path)
+                temp.files_paths.append(file_path)
+                if data.get("file_path"):
+                    pass
+                    # file_paths = data["file_path"] + f"\n{file_path}"
+                    # await state.update_data(file_path=file_paths)
+
+                else:
+                    await state.update_data(type=type, text=text, file_path=str(file_path))
+                await message.answer("Фото загружено", reply_markup=markups.summation_done_kbr)
+
+            else:
+                type = "text"
+                text = message.text
+                if temp.files_paths:
+                    await state.update_data(file_path="\n".join(map(str, temp.files_paths)))
+                    temp.files_paths = []
+
+                await state.update_data(type=type, text=text)
+                await message.answer("Введите название кнопки", reply_markup=ReplyKeyboardRemove())
+                await UploadSummation.next()
+
     except Exception as e:
         logger.exception(e)
         logger.warning("Ошибка отправьте текст или фото")
@@ -66,9 +106,8 @@ async def upload_summation_data(message: types.Message, state: FSMContext):
 async def upload_summation_title(message: types.Message, state: FSMContext):
     await state.update_data(title=message.text)
     data = await state.get_data()
-    await SummationStorage.create(
-        **data
-    )
+    logger.info(f"END DATA {data}")
+    await SummationStorage.create(**data)
     await message.answer("Суммативка успешно добавлена")
     # await message.answer(str(await state.get_data()))
     await state.finish()
@@ -78,7 +117,7 @@ async def delete_summation(call: types.CallbackQuery):
     summations = await SummationStorage.all()
     answer = "Список суммативок\n"
     for summation in summations:
-        answer += f"{summation}\n{'_'*15}\n"
+        answer += f"{summation}\n{'_' * 15}\n"
     answer += "\n\nВведите ID для удаления чтобы отменить введите /admin"
     await call.message.answer(answer)
 
@@ -114,18 +153,19 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
     await message.answer("Рассылка успешно отправлена")
 
 
-
-
 def register_admin_menu_handlers(dp: Dispatcher):
     dp.register_message_handler(admin_menu, MainFilter(), commands="admin", user_id=config.bot.admins, state="*")
-    dp.register_message_handler(no_admin_menu, MainFilter(), commands="admin",  state="*")
+    dp.register_message_handler(no_admin_menu, MainFilter(), commands="admin", state="*")
 
     dp.register_callback_query_handler(add_summation, MainFilter(), text="add_summation")
 
-    dp.register_message_handler(upload_summation_data, MainFilter(),
-                                # content_types=[ContentTypes.PHOTO, ContentTypes.TEXT, ContentTypes.DOCUMENT],
-                                content_types=ContentTypes.ANY,
-                                state=UploadSummation.data)
+    dp.register_message_handler(
+        upload_summation_data,
+        MainFilter(),
+        # content_types=[ContentTypes.PHOTO, ContentTypes.TEXT, ContentTypes.DOCUMENT],
+        content_types=ContentTypes.ANY,
+        state=UploadSummation.data,
+    )
 
     dp.register_message_handler(upload_summation_title, MainFilter(), state=UploadSummation.title)
 
