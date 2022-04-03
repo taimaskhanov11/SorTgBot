@@ -1,6 +1,4 @@
 from pathlib import Path
-from pprint import pprint
-from typing import Optional
 
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
@@ -12,7 +10,7 @@ from sortgbot.bot import markups
 from sortgbot.bot.filters.main_filter import MainFilter
 from sortgbot.bot.states.create_summation import CreateSummation, UploadSummation
 from sortgbot.bot.utils.main_helpers import temp
-from sortgbot.config.config import config, BASE_DIR, TEMP_DIR
+from sortgbot.config.config import config, TEMP_DIR
 from sortgbot.db.models import User, SummationStorage
 from sortgbot.loader import bot
 
@@ -140,16 +138,16 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
     if message.text == "Завершить":
         data = await state.get_data()
         _type = data.get("type")
-        for file in temp.send_data:
+        for file, caption in temp.send_data:
             if _type == "photo":
                 for user in await User.all():
                     with open(file, "rb") as f:
-                        await message.bot.send_photo(user.user_id, f)
+                        await message.bot.send_photo(user.user_id, f, caption=caption)
 
             else:
                 for user in await User.all():
                     with open(file, "rb") as f:
-                        await message.bot.send_document(user.user_id, f)
+                        await message.bot.send_document(user.user_id, f, caption=caption)
 
         temp.send_data = []
         await message.answer("Рассылка успешно отправлена", reply_markup=ReplyKeyboardRemove())
@@ -163,9 +161,9 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
             # logger.info(message.document)
             file = message.photo[-1] if message.photo else message.document
             logger.info(file.as_json())
-            file_path = TEMP_DIR / file.file_id
+            file_path: Path = TEMP_DIR / file.file_id
             await file.download(destination_file=file_path)
-            temp.send_data.append(file_path)
+            temp.send_data.append((file_path, text))
             await state.update_data(type=type, text=text)
             await message.answer("Фото для отправки загружено", reply_markup=markups.summation_done_kbr)
 
@@ -173,7 +171,7 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
             type = "text"
             text = message.text
             if temp.send_data:
-                await state.update_data(file_path="\n".join(map(str, temp.send_data)))
+                # await state.update_data(file_path="\n".join(map(str, temp.send_data)))
                 temp.send_data = []
             await state.update_data(type=type, text=text)
             for user in await User.all():

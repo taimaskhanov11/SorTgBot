@@ -1,7 +1,4 @@
-from pydantic import BaseModel
 from tortoise import models, fields
-
-from sortgbot.bot.scenario.scenario import Scenario
 
 
 class User(models.Model):
