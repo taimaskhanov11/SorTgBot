@@ -124,6 +124,10 @@ async def delete_summation_done(message: types.Message, state: FSMContext):
 
 async def users_list(call: types.CallbackQuery):
     users = "\n".join(map(str, await User.all()))
+    try:
+        await part_sending(call.message, users)
+    except Exception as e:
+        logger.critical(e)
     await call.message.answer(users or "Пусто")
 
 
