@@ -130,7 +130,7 @@ async def users_list(call: types.CallbackQuery):
         await part_sending(call.message, users)
     except Exception as e:
         logger.critical(e)
-    await call.message.answer(users or "Пусто")
+        await call.message.answer("Пусто")
 
 
 async def users_count(call: types.CallbackQuery):
