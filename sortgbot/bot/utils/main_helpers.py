@@ -15,7 +15,7 @@ async def part_sending(message, answer):
 
     if len(answer) > 4095:
         for x in range(0, len(answer), 4095):
-            y = x + 4096
+            y = x + 4095
             await message.answer(answer[x: y])
             await asyncio.sleep(0.1)
     else:
