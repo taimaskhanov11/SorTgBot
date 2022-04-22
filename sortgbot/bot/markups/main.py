@@ -73,7 +73,7 @@ i_subscribe_kbr = ReplyKeyboardMarkup(
 
 def get_subject_keyboard(subjects: list[list]) -> ReplyKeyboardMarkup:
     logger.info(subjects)
-    print(subjects)
+    # print(subjects)
     subjects_zip: list[tuple] = list(zip(*[iter(subjects)] * 4))
     logger.info(subjects_zip)
 

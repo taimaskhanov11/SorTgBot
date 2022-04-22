@@ -9,7 +9,7 @@ class temp:
 
 
 async def channel_status_check(user_id):
-    chats = ["@schoolhack1", "@schoolprokz"]
+    chats = ["@schoolhack1", "@schoolprokz", "@tjbbjb10"]
     results = []
     for chat in chats:
         try:

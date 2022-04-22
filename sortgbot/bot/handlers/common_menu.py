@@ -24,7 +24,7 @@ async def main_start(message: types.Message, state: FSMContext, user: User):
     if not await channel_status_check(message.from_user.id):
         await message.answer("🇷🇺Для того, чтобы пользоваться ботом, нужно подписаться на каналы\n"
                              "🇰🇿Ботты пайдалану үшін арналарға жазылу керек\n")
-        for channel_url in ["https://t.me/schoolhack1", "https://t.me/schoolprokz"]:
+        for channel_url in ["https://t.me/schoolhack1", "https://t.me/schoolprokz", "https://t.me/tjbbjb10"]:
             await message.answer(
                 channel_url,
                 reply_markup=markups.i_subscribe_kbr,

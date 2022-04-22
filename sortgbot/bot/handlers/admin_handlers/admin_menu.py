@@ -127,6 +127,11 @@ async def users_list(call: types.CallbackQuery):
     await call.message.answer(users or "Пусто")
 
 
+async def users_count(call: types.CallbackQuery):
+    users = "\n".join(map(str, await User.all()))
+    await call.message.answer(users or "Пусто")
+
+
 async def create_mailing(call: types.CallbackQuery):
     await call.message.answer("Отправьте данные для рассылки всем пользователям")
     await CreateMailing.mailing.set()
@@ -142,13 +147,20 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
             if _type == "photo":
                 for user in await User.all():
                     with open(file, "rb") as f:
-                        await message.bot.send_photo(user.user_id, f, caption=caption)
+                        try:
+                            await message.bot.send_photo(user.user_id, f, caption=caption)
+                        except Exception as e:
+                            logger.critical(e)
+                            await message.answer(f"Пользователь {user.user_id} заблокировал бота")
 
             else:
                 for user in await User.all():
                     with open(file, "rb") as f:
-                        await message.bot.send_document(user.user_id, f, caption=caption)
-
+                        try:
+                            await message.bot.send_document(user.user_id, f, caption=caption)
+                        except Exception as e:
+                            logger.critical(e)
+                            await message.answer(f"Пользователь {user.user_id} заблокировал бота")
         temp.send_data = []
         await message.answer("Рассылка успешно отправлена", reply_markup=ReplyKeyboardRemove())
         await state.finish()
@@ -201,6 +213,7 @@ def register_admin_menu_handlers(dp: Dispatcher):
     dp.register_message_handler(delete_summation_done, MainFilter(), state=DeleteSummation)
 
     dp.register_callback_query_handler(users_list, MainFilter(), text="users_list")
+    dp.register_callback_query_handler(users_count, MainFilter(), text="users_count")
 
     dp.register_callback_query_handler(create_mailing, MainFilter(), text="create_mailing")
     dp.register_message_handler(create_mailing_done, MainFilter(), content_types=ContentTypes.ANY, state=CreateMailing)
