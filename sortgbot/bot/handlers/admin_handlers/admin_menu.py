@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 
 from aiogram import Dispatcher, types
@@ -44,7 +45,7 @@ async def add_summation(call: types.CallbackQuery, state: FSMContext):
 async def upload_summation_data(message: types.Message, state: FSMContext):
     # todo 28.03.2022 21:38 taima: text or photo
     data = await state.get_data()
-    logger.trace(data)
+    # logger.trace(data)
     try:
         if message.text == "Завершить":
             await state.update_data(file_path="\n".join(map(str, temp.files_paths)))
@@ -146,32 +147,36 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
     logger.trace(temp.send_data)
     all_count = 0
     ignore_count = 0
+    count_users = await User.all().count()
     if message.text == "Завершить":
         data = await state.get_data()
         _type = data.get("type")
         for file, caption in temp.send_data:
+            await message.answer(f"Отправка {count_users} пользователям...")
             if _type == "photo":
                 for user in await User.all():
                     with open(file, "rb") as f:
                         try:
-                            await message.bot.send_photo(user.user_id, f, caption=caption)
+                            # await message.bot.send_photo(user.user_id, f, caption=caption)
+                            asyncio.create_task(message.bot.send_photo(user.user_id, f, caption=caption))
                             all_count += 1
-
                         except Exception as e:
                             ignore_count += 1
                             logger.critical(e)
-                            await message.answer(f"Пользователь {user.user_id} заблокировал бота")
+                            # await message.answer(f"Пользователь {user.user_id} заблокировал бота")
 
             else:
                 for user in await User.all():
                     with open(file, "rb") as f:
                         try:
-                            await message.bot.send_document(user.user_id, f, caption=caption)
+                            asyncio.create_task(message.bot.send_document(user.user_id, f, caption=caption))
+
+                            # await message.bot.send_document(user.user_id, f, caption=caption)
                             all_count += 1
                         except Exception as e:
                             ignore_count += 1
                             logger.critical(e)
-                            await message.answer(f"Пользователь {user.user_id} заблокировал бота")
+                            # await message.answer(f"Пользователь {user.user_id} заблокировал бота")
         temp.send_data = []
 
         await message.answer(
@@ -200,14 +205,16 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
                 # await state.update_data(file_path="\n".join(map(str, temp.send_data)))
                 temp.send_data = []
             await state.update_data(type=type, text=text)
+            await message.answer(f"Отправка {count_users} пользователям...")
             for user in await User.all():
                 try:
-                    await bot.send_message(user.user_id, message.text)
+                    # await bot.send_message(user.user_id, message.text)
+                    asyncio.create_task(message.bot.send_message(user.user_id, message.text))
                     all_count += 1
                 except Exception as e:
                     ignore_count += 1
                     logger.critical(e)
-                    await message.answer(f"Пользователь {user.user_id} заблокировал бота")
+                    # await message.answer(f"Пользователь {user.user_id} заблокировал бота")
 
             await message.answer(
                 f"Рассылка успешно отправлена {all_count} пользователям\n Не удалось отправить {ignore_count}",

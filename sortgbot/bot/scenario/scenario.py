@@ -24,7 +24,7 @@ class Scenario(BaseModel):
     subjects_list: list[list]
 
     def get_subject_keyboard(self, grade) -> ReplyKeyboardMarkup:
-        logger.trace(grade)
+        # logger.trace(grade)
         if grade in (5, 6):
             subjects = self.subjects_list[0]
         elif grade in (7, 8):
