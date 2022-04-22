@@ -13,11 +13,11 @@ class temp:
 async def part_sending(message, answer):
     logger.trace(f"Message sign count {len(answer)}")
 
-    if len(answer) > 4096:
-        for x in range(0, len(answer), 4096):
+    if len(answer) > 4095:
+        for x in range(0, len(answer), 4095):
             y = x + 4096
             await message.answer(answer[x: y])
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(0.1)
     else:
         await message.answer(answer)
 

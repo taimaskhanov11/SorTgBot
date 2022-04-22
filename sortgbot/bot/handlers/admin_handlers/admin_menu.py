@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 
 from aiogram import Dispatcher, types
@@ -163,8 +164,8 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
                     file = f.read()
                     for user in await User.all():
                         try:
-                            await message.bot.send_photo(user.user_id, file, caption=caption)
-                            # asyncio.create_task(message.bot.send_photo(user.user_id, f, caption=caption))
+                            # await message.bot.send_photo(user.user_id, file, caption=caption)
+                            asyncio.create_task(message.bot.send_photo(user.user_id, file, caption=caption))
                             all_count += 1
                         except Exception as e:
                             ignore_count += 1
@@ -176,9 +177,9 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
                     file = f.read()
                     for user in await User.all():
                         try:
-                            # asyncio.create_task(message.bot.send_document(user.user_id, f, caption=caption))
-                            #
-                            await message.bot.send_document(user.user_id, file, caption=caption)
+                            asyncio.create_task(message.bot.send_document(user.user_id, file, caption=caption))
+
+                            # await message.bot.send_document(user.user_id, file, caption=caption)
                             all_count += 1
                         except Exception as e:
                             ignore_count += 1
@@ -224,8 +225,8 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
                 f"После отправки придет  сообщение об успешной отправке, ожидайте...")
             for user in await User.all():
                 try:
-                    await bot.send_message(user.user_id, message.text)
-                    # asyncio.create_task(message.bot.send_message(user.user_id, message.text))
+                    # await bot.send_message(user.user_id, message.text)
+                    asyncio.create_task(message.bot.send_message(user.user_id, message.text))
                     all_count += 1
                 except Exception as e:
                     ignore_count += 1
