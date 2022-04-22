@@ -106,8 +106,8 @@ async def delete_summation(call: types.CallbackQuery, state: FSMContext):
     for summation in summations:
         answer += f"{summation}\n{'_' * 15}\n"
     answer += "\n\nВведите ID для удаления чтобы отменить введите /admin"
-    await part_sending(call.message, answer)
     await DeleteSummation.delete.set()
+    await part_sending(call.message, answer)
 
 
 async def delete_summation_done(message: types.Message, state: FSMContext):
