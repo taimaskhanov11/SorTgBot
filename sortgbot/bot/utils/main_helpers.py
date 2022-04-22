@@ -1,3 +1,5 @@
+import asyncio
+
 from loguru import logger
 
 from sortgbot.loader import bot
@@ -5,7 +7,19 @@ from sortgbot.loader import bot
 
 class temp:
     files_paths = []
-    send_data:list[tuple] = []
+    send_data: list[tuple] = []
+
+
+async def part_sending(message, answer):
+    logger.trace(f"Message sign count {len(answer)}")
+
+    if len(answer) > 4096:
+        for x in range(0, len(answer), 4096):
+            y = x + 4096
+            await message.answer(answer[x: y])
+            await asyncio.sleep(0.2)
+    else:
+        await message.answer(answer)
 
 
 async def channel_status_check(user_id):

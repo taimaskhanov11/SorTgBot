@@ -9,7 +9,7 @@ from loguru import logger
 from sortgbot.bot import markups
 from sortgbot.bot.filters.main_filter import MainFilter
 from sortgbot.bot.states.create_summation import CreateSummation, UploadSummation
-from sortgbot.bot.utils.main_helpers import temp
+from sortgbot.bot.utils.main_helpers import temp, part_sending
 from sortgbot.config.config import config, TEMP_DIR
 from sortgbot.db.models import User, SummationStorage
 from sortgbot.loader import bot
@@ -104,8 +104,8 @@ async def delete_summation(call: types.CallbackQuery):
     for summation in summations:
         answer += f"{summation}\n{'_' * 15}\n"
     answer += "\n\nВведите ID для удаления чтобы отменить введите /admin"
+    await part_sending(call.message, answer)
     await DeleteSummation.delete.set()
-    await call.message.answer(answer)
 
 
 async def delete_summation_done(message: types.Message, state: FSMContext):
@@ -128,8 +128,8 @@ async def users_list(call: types.CallbackQuery):
 
 
 async def users_count(call: types.CallbackQuery):
-    users = "\n".join(map(str, await User.all()))
-    await call.message.answer(users or "Пусто")
+    count = await User.all().count()
+    await call.message.answer(f"Всего пользователей {count}")
 
 
 async def create_mailing(call: types.CallbackQuery):
@@ -140,6 +140,8 @@ async def create_mailing(call: types.CallbackQuery):
 async def create_mailing_done(message: types.Message, state: FSMContext):
     logger.trace(message)
     logger.trace(temp.send_data)
+    all_count = 0
+    ignore_count = 0
     if message.text == "Завершить":
         data = await state.get_data()
         _type = data.get("type")
@@ -149,7 +151,10 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
                     with open(file, "rb") as f:
                         try:
                             await message.bot.send_photo(user.user_id, f, caption=caption)
+                            all_count += 1
+
                         except Exception as e:
+                            ignore_count += 1
                             logger.critical(e)
                             await message.answer(f"Пользователь {user.user_id} заблокировал бота")
 
@@ -158,11 +163,18 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
                     with open(file, "rb") as f:
                         try:
                             await message.bot.send_document(user.user_id, f, caption=caption)
+                            all_count += 1
+
                         except Exception as e:
+                            ignore_count += 1
+
                             logger.critical(e)
                             await message.answer(f"Пользователь {user.user_id} заблокировал бота")
         temp.send_data = []
-        await message.answer("Рассылка успешно отправлена", reply_markup=ReplyKeyboardRemove())
+
+        await message.answer(
+            f"Рассылка успешно отправлена {all_count} пользователям\n Не удалось отправить {ignore_count}",
+            reply_markup=ReplyKeyboardRemove())
         await state.finish()
 
     else:
