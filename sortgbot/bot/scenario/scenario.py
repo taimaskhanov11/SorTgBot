@@ -1,7 +1,6 @@
 from typing import Optional
 
 from aiogram.types import ReplyKeyboardMarkup
-from loguru import logger
 from pydantic import BaseModel
 
 from sortgbot.bot import markups
