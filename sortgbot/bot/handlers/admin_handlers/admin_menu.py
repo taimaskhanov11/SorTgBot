@@ -99,7 +99,8 @@ async def upload_summation_title(message: types.Message, state: FSMContext):
     await state.finish()
 
 
-async def delete_summation(call: types.CallbackQuery):
+async def delete_summation(call: types.CallbackQuery, state:FSMContext):
+    await state.finish()
     summations = await SummationStorage.all()
     answer = "Список суммативок\n"
     for summation in summations:
@@ -157,8 +158,8 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
                 for user in await User.all():
                     with open(file, "rb") as f:
                         try:
-                            # await message.bot.send_photo(user.user_id, f, caption=caption)
-                            asyncio.create_task(message.bot.send_photo(user.user_id, f, caption=caption))
+                            await message.bot.send_photo(user.user_id, f, caption=caption)
+                            # asyncio.create_task(message.bot.send_photo(user.user_id, f, caption=caption))
                             all_count += 1
                         except Exception as e:
                             ignore_count += 1
@@ -169,9 +170,9 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
                 for user in await User.all():
                     with open(file, "rb") as f:
                         try:
-                            asyncio.create_task(message.bot.send_document(user.user_id, f, caption=caption))
-
-                            # await message.bot.send_document(user.user_id, f, caption=caption)
+                            # asyncio.create_task(message.bot.send_document(user.user_id, f, caption=caption))
+                            #
+                            await message.bot.send_document(user.user_id, f, caption=caption)
                             all_count += 1
                         except Exception as e:
                             ignore_count += 1
@@ -208,8 +209,8 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
             await message.answer(f"Отправка {count_users} пользователям...")
             for user in await User.all():
                 try:
-                    # await bot.send_message(user.user_id, message.text)
-                    asyncio.create_task(message.bot.send_message(user.user_id, message.text))
+                    await bot.send_message(user.user_id, message.text)
+                    # asyncio.create_task(message.bot.send_message(user.user_id, message.text))
                     all_count += 1
                 except Exception as e:
                     ignore_count += 1
@@ -226,7 +227,7 @@ def register_admin_menu_handlers(dp: Dispatcher):
     dp.register_message_handler(admin_menu, MainFilter(), commands="admin", user_id=config.bot.admins, state="*")
     dp.register_message_handler(no_admin_menu, MainFilter(), commands="admin", state="*")
 
-    dp.register_callback_query_handler(add_summation, MainFilter(), text="add_summation")
+    dp.register_callback_query_handler(add_summation, MainFilter(), text="add_summation", state="*")
 
     dp.register_message_handler(
         upload_summation_data,
@@ -238,7 +239,7 @@ def register_admin_menu_handlers(dp: Dispatcher):
 
     dp.register_message_handler(upload_summation_title, MainFilter(), state=UploadSummation.title)
 
-    dp.register_callback_query_handler(delete_summation, MainFilter(), text="delete_summation")
+    dp.register_callback_query_handler(delete_summation, MainFilter(), text="delete_summation", state="*")
     dp.register_message_handler(delete_summation_done, MainFilter(), state=DeleteSummation)
 
     dp.register_callback_query_handler(users_list, MainFilter(), text="users_list")
