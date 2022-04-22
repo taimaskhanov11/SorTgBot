@@ -31,7 +31,7 @@ async def channel_status_check(user_id):
                 chat_id=chat,
                 user_id=user_id,
             )
-            logger.trace(status)
+            # logger.trace(status)
             if status["status"] != "left":
                 results.append(True)
             else:

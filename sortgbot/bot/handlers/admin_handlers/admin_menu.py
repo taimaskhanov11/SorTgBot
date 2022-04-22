@@ -1,4 +1,3 @@
-import asyncio
 from pathlib import Path
 
 from aiogram import Dispatcher, types
@@ -158,7 +157,8 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
                 f"Отправка {count_users} пользователям... "
                 f"Время отправки зависит от количества пользователей(5-10 минут)."
                 f" Не отправляйте новую рассылку по не завершится текущая. "
-                f"После отправки придет  сообщение об успешной отправке, ожидайте...")
+                f"После отправки придет  сообщение об успешной отправке, ожидайте...",
+                reply_markup=ReplyKeyboardRemove())
             if _type == "photo":
                 with open(file, "rb") as f:
                     file = f.read()
@@ -219,10 +219,11 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
             await state.update_data(type=type, text=text)
             await state.finish()
             await message.answer(
-                f"Отправка сообщения {count_users} пользователям... "
-                f"Время отправки зависит от количества пользователей(5-10 минут)."
-                f" Не отправляйте новую рассылку по не завершится текущая. "
-                f"После отправки придет  сообщение об успешной отправке, ожидайте...")
+                f"Отправка сообщения {count_users} пользователям...\n"
+                f"Время отправки зависит от количества пользователей(5-10 минут).\n"
+                f"Не отправляйте новую рассылку по не завершится текущая.\n"
+                f"После отправки придет  сообщение об успешной отправке, ожидайте...",
+                reply_markup=ReplyKeyboardRemove())
             for user in await User.all():
                 try:
                     await bot.send_message(user.user_id, message.text)
