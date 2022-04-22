@@ -168,10 +168,8 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
                         try:
                             await message.bot.send_document(user.user_id, f, caption=caption)
                             all_count += 1
-
                         except Exception as e:
                             ignore_count += 1
-
                             logger.critical(e)
                             await message.answer(f"Пользователь {user.user_id} заблокировал бота")
         temp.send_data = []
@@ -203,9 +201,17 @@ async def create_mailing_done(message: types.Message, state: FSMContext):
                 temp.send_data = []
             await state.update_data(type=type, text=text)
             for user in await User.all():
-                await bot.send_message(user.user_id, message.text)
+                try:
+                    await bot.send_message(user.user_id, message.text)
+                    all_count += 1
+                except Exception as e:
+                    ignore_count += 1
+                    logger.critical(e)
+                    await message.answer(f"Пользователь {user.user_id} заблокировал бота")
 
-            await message.answer("Рассылка успешно отправлена.", reply_markup=ReplyKeyboardRemove())
+            await message.answer(
+                f"Рассылка успешно отправлена {all_count} пользователям\n Не удалось отправить {ignore_count}",
+                reply_markup=ReplyKeyboardRemove())
             await state.finish()
 
 
