@@ -9,6 +9,7 @@ from sortgbot.bot.filters.main_filter import MainFilter
 from sortgbot.bot.handlers.admin_handlers.admin_menu import register_admin_menu_handlers
 from sortgbot.bot.handlers.common_menu import register_common_handlers
 from sortgbot.bot.handlers.end_case import register_end_case_handlers
+from sortgbot.bot.handlers.errors_handlers import register_error_handlers
 from sortgbot.bot.middleware.auth_middleware import AuthMiddleware
 from sortgbot.config.log_settings import init_logging
 from sortgbot.db.db_main import init_tortoise
@@ -40,6 +41,7 @@ async def main():
     register_admin_menu_handlers(dp)
     register_common_handlers(dp)
     register_end_case_handlers(dp)
+    register_error_handlers(dp)
     # Регистрация middleware
     # dp.middleware.setup(FatherMiddleware())
     # dp.middleware.setup(AuthMiddleware())
