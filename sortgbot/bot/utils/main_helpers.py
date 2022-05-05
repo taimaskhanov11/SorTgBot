@@ -23,7 +23,7 @@ async def part_sending(message, answer):
 
 
 async def channel_status_check(user_id):
-    chats = ["@schoolhack1", "@schoolprokz", "@tjbbjb10"]
+    chats = ["@schoolhack1", "@schoolprokz", "@tjbbjb10", "@MEKTEP_KZ"]
     results = []
     for chat in chats:
         try:
